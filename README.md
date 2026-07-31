@@ -198,3 +198,7 @@ python scripts/compare_rewrite_runs.py \
 ## Independent Rewriter v02
 
 The Gate and Rewriter are evaluated as separate modules. For the POSITIVE-only Rewriter workflow, see [`REWRITER_EXPERIMENT.md`](REWRITER_EXPERIMENT.md). The independent runner is `scripts/run_rewriter_experiment.py`; it does not accept or read Gate predictions.
+
+## Second-layer rewrite quality Judge
+
+See [`SECOND_LAYER_LLM_JUDGE.md`](SECOND_LAYER_LLM_JUDGE.md) for the independent 1–3 LLM scoring pipeline. The Judge returns raw scores only; percentage normalization and weighted aggregation are computed by Python.
