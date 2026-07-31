@@ -125,6 +125,25 @@ python scripts/run_experiment.py \
 
 The test split should remain frozen until prompt, examples, model selection, and thresholds are finalized.
 
+
+## Optional Rule-first front route
+
+The frozen contrastive LLM Gate can now be preceded by a conservative
+deterministic route. See [`UPDATE_RULE_FIRST_GATE.md`](UPDATE_RULE_FIRST_GATE.md).
+
+```bash
+# Original LLM-only Gate
+python scripts/run_experiment.py \
+  --config configs/experiments/contrastive_fewshot.yaml
+
+# Rule-first + the same frozen LLM Gate
+python scripts/run_experiment.py \
+  --config configs/experiments/contrastive_fewshot_rule_first.yaml
+```
+
+The same config can be overridden with `--rule-first` or `--no-rule-first`.
+Unmatched items always fall back to the unchanged frozen LLM Gate.
+
 ## Outputs
 
 Each experiment writes a reproducible run directory containing the copied config and prompt, predictions, metrics, error slices, and SHA-256 hashes of the dataset and split.

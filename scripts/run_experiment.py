@@ -25,6 +25,15 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def apply_rule_first_override(config: dict, enabled: bool | None) -> None:
+    if enabled is None:
+        return
+    rule_first = dict(config.get("rule_first") or {})
+    rule_first.setdefault("ruleset", "deterministic_v01")
+    rule_first["enabled"] = enabled
+    config["rule_first"] = rule_first
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True)
@@ -32,6 +41,17 @@ def main() -> None:
     parser.add_argument("--model-key")
     parser.add_argument("--name")
     parser.add_argument("--limit", type=int)
+    rule_group = parser.add_mutually_exclusive_group()
+    rule_group.add_argument(
+        "--rule-first",
+        action="store_true",
+        help="Enable deterministic rules before the frozen LLM Gate.",
+    )
+    rule_group.add_argument(
+        "--no-rule-first",
+        action="store_true",
+        help="Disable deterministic rules and use the frozen LLM Gate only.",
+    )
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parents[1]
@@ -45,6 +65,13 @@ def main() -> None:
         config["model_key"] = args.model_key
     if args.name:
         config["name"] = args.name
+
+    override: bool | None = None
+    if args.rule_first:
+        override = True
+    elif args.no_rule_first:
+        override = False
+    apply_rule_first_override(config, override)
 
     models_path = root / config["models_config"]
     models = yaml.safe_load(
@@ -100,6 +127,8 @@ def main() -> None:
                     print(f"Completed {completed}/{len(items)}")
 
     metrics = generate_reports(run_dir, predictions)
+    rule_config = config.get("rule_first") or {}
+    rules_path = root / "src/gender_gate/deterministic_rules.py"
     manifest = {
         "started_from_config": str(config_path.relative_to(root)),
         "completed_at": datetime.now(timezone.utc).isoformat(),
@@ -116,6 +145,15 @@ def main() -> None:
             if config.get("examples")
             else None
         ),
+        "rule_first": {
+            "enabled": bool(rule_config.get("enabled", False)),
+            "ruleset": rule_config.get("ruleset"),
+            "rules_sha256": (
+                sha256_file(rules_path)
+                if bool(rule_config.get("enabled", False))
+                else None
+            ),
+        },
         "metrics": metrics,
     }
     (run_dir / "manifest.json").write_text(
@@ -129,6 +167,8 @@ def main() -> None:
     print(
         f"Balanced Accuracy: {metrics['balanced_accuracy']:.4f}"
     )
+    print(f"Rule coverage: {metrics['routing']['rule_coverage']:.4f}")
+    print(f"LLM call rate: {metrics['routing']['llm_call_rate']:.4f}")
     print(f"Passes 90% target: {metrics['passes_90_target']}")
 
 

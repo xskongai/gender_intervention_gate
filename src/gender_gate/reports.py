@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -53,8 +53,37 @@ def group_report(predictions: list[dict[str, Any]], field: str) -> list[dict[str
     return rows
 
 
+def route_metrics(predictions: list[dict[str, Any]]) -> dict[str, Any]:
+    route_counts = Counter(str(p.get("route") or "LLM") for p in predictions)
+    rule_counts = Counter(
+        str(p["rule"])
+        for p in predictions
+        if p.get("route") == "RULE" and p.get("rule")
+    )
+    total = len(predictions)
+    rule_count = route_counts.get("RULE", 0)
+    llm_count = route_counts.get("LLM", 0)
+    rule_correct = sum(
+        p.get("route") == "RULE" and p.get("predicted") == p.get("gold")
+        for p in predictions
+    )
+    return {
+        "route_counts": dict(route_counts),
+        "rule_counts": dict(rule_counts),
+        "rule_routed": rule_count,
+        "llm_routed": llm_count,
+        "rule_coverage": 0.0 if total == 0 else rule_count / total,
+        "llm_call_rate": 0.0 if total == 0 else llm_count / total,
+        "rule_observed_accuracy": (
+            None if rule_count == 0 else rule_correct / rule_count
+        ),
+    }
+
+
 def generate_reports(run_dir: Path, predictions: list[dict[str, Any]]) -> dict[str, Any]:
     metrics = calculate_metrics(predictions)
+    routing = route_metrics(predictions)
+    metrics["routing"] = routing
     (run_dir / "metrics.json").write_text(
         json.dumps(metrics, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -74,12 +103,18 @@ def generate_reports(run_dir: Path, predictions: list[dict[str, Any]]) -> dict[s
         if p["gold"] == "NEGATIVE" and p.get("predicted") != "NEGATIVE"
     ]
     format_errors = [p for p in predictions if p.get("predicted") is None]
+    rule_routed = [p for p in predictions if p.get("route") == "RULE"]
 
     write_csv(run_dir / "positive_misses.csv", positive_misses)
     write_csv(run_dir / "negative_false_alarms.csv", negative_false_alarms)
     write_csv(run_dir / "format_errors.csv", format_errors)
+    write_csv(run_dir / "rule_routed.csv", rule_routed)
 
     confusion = metrics["confusion"]
+    observed_rule_accuracy = routing["rule_observed_accuracy"]
+    observed_rule_accuracy_text = (
+        "n/a" if observed_rule_accuracy is None else _pct(observed_rule_accuracy)
+    )
     summary = f"""# Experiment Summary
 
 | Metric | Value |
@@ -96,6 +131,28 @@ def generate_reports(run_dir: Path, predictions: list[dict[str, Any]]) -> dict[s
 | Both classes >= 90% | {metrics['passes_90_target']} |
 | Both classes >= 94% | {metrics['passes_94_dev_target']} |
 
+## Routing
+
+| Metric | Value |
+|---|---:|
+| Rule-routed | {routing['rule_routed']} |
+| LLM-routed | {routing['llm_routed']} |
+| Rule coverage | {_pct(routing['rule_coverage'])} |
+| LLM call rate | {_pct(routing['llm_call_rate'])} |
+| Observed rule accuracy | {observed_rule_accuracy_text} |
+
+## Rule counts
+
+| Rule | Count |
+|---|---:|
+"""
+    if routing["rule_counts"]:
+        for rule, count in sorted(routing["rule_counts"].items()):
+            summary += f"| {rule} | {count} |\n"
+    else:
+        summary += "| — | 0 |\n"
+
+    summary += f"""
 ## Confusion counts
 
 | Item | Count |

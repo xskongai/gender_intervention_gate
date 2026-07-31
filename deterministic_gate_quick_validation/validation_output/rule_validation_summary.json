@@ -1,0 +1,18 @@
+{
+  "dataset_rows": 1588,
+  "rule_routed": 202,
+  "coverage": 0.12720403022670027,
+  "rule_keep": 99,
+  "rule_edit": 103,
+  "llm_fallback": 1386,
+  "llm_call_rate": 0.8727959697732998,
+  "gold_conflicts": 0,
+  "matched_disputed_rows": 0,
+  "rule_counts": {
+    "KEEP_QUOTED_REPORT": 24,
+    "KEEP_LEXICALIZED_TERM": 75,
+    "EDIT_GENERIC_MASCULINE": 14,
+    "EDIT_GENDER_COMPARISON": 72,
+    "EDIT_GENDER_SLUR": 17
+  }
+}

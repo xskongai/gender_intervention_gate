@@ -1,4 +1,4 @@
-name: contrastive_fewshot_pilot
+name: contrastive_fewshot_rule_first_pilot
 model_key: openai
 models_config: configs/models.yaml
 split: data/splits/group_aware_v2.3/dev_pilot_60.jsonl
@@ -11,5 +11,5 @@ concurrency: 5
 retries: 3
 cache_db: .cache/llm_cache.sqlite
 rule_first:
-  enabled: false
+  enabled: true
   ruleset: deterministic_v01

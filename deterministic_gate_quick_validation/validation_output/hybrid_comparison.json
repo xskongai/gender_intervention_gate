@@ -1,0 +1,27 @@
+{
+  "llm_only": {
+    "evaluated": 400,
+    "accuracy": 0.9675,
+    "positive_recall": 0.9634703196347032,
+    "negative_preservation": 0.9723756906077348,
+    "over_edit_rate": 0.027624309392265234
+  },
+  "rule_first_hybrid": {
+    "evaluated": 400,
+    "accuracy": 0.9675,
+    "positive_recall": 0.9634703196347032,
+    "negative_preservation": 0.9723756906077348,
+    "over_edit_rate": 0.027624309392265234
+  },
+  "delta": {
+    "accuracy": 0.0,
+    "positive_recall": 0.0,
+    "negative_preservation": 0.0,
+    "over_edit_rate": 0.0
+  },
+  "rule_overrides_of_llm": 0,
+  "rule_routed_in_evaluated_subset": 68,
+  "hybrid_llm_calls_in_evaluated_subset": 332,
+  "hybrid_llm_call_rate_in_evaluated_subset": 0.83,
+  "expected_llm_call_rate_on_full_dataset": 0.8727959697732998
+}

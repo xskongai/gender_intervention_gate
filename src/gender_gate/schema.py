@@ -36,6 +36,9 @@ class Prediction:
     cache_hit: bool
     error: str | None = None
     meta: dict[str, Any] | None = None
+    route: str | None = None
+    rule: str | None = None
+    ruleset: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
