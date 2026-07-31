@@ -44,6 +44,11 @@ def main() -> None:
     parser.add_argument("--limit", type=int)
     parser.add_argument("--concurrency", type=int)
     parser.add_argument(
+        "--progress-every",
+        type=int,
+        help="Print detailed progress every N completed items (default: config value or 10).",
+    )
+    parser.add_argument(
         "--max-output-tokens",
         type=int,
         help="Override the Gate output-token budget for this run.",
@@ -83,6 +88,10 @@ def main() -> None:
         if args.concurrency <= 0:
             raise ValueError("--concurrency must be positive")
         config["concurrency"] = args.concurrency
+    if args.progress_every is not None:
+        if args.progress_every <= 0:
+            raise ValueError("--progress-every must be positive")
+        config["progress_every"] = args.progress_every
     if args.max_output_tokens is not None:
         if args.max_output_tokens <= 0:
             raise ValueError("--max-output-tokens must be positive")
@@ -108,6 +117,16 @@ def main() -> None:
     model_key = config["model_key"]
     if model_key not in models:
         raise KeyError(f"Unknown model_key: {model_key}")
+
+    # Named model profiles may define fast local defaults. A CLI override remains
+    # authoritative, while profile defaults replace the generic experiment budget.
+    model_profile = models[model_key]
+    if args.max_output_tokens is None and model_profile.get("max_tokens") is not None:
+        config["max_output_tokens"] = int(model_profile["max_tokens"])
+    if model_profile.get("temperature") is not None:
+        config["temperature"] = float(model_profile["temperature"])
+    if model_profile.get("retries") is not None:
+        config["retries"] = int(model_profile["retries"])
 
     split_path = root / config["split"]
     items = load_items(split_path)
@@ -151,8 +170,20 @@ def main() -> None:
                 )
                 output.flush()
                 completed += 1
-                if completed % 10 == 0 or completed == len(items):
-                    print(f"Completed {completed}/{len(items)}")
+                progress_every = int(config.get("progress_every", 10))
+                if completed % progress_every == 0 or completed == len(items):
+                    pred_text = prediction.get("predicted") or "FAILED"
+                    route = prediction.get("route") or "LLM"
+                    latency_s = float(prediction.get("latency_ms") or 0) / 1000.0
+                    print(
+                        f"[{completed:>4}/{len(items)}] "
+                        f"{prediction.get('id', ''):<12} "
+                        f"gold={prediction.get('gold', ''):<8} "
+                        f"pred={pred_text:<8} "
+                        f"route={route:<4} "
+                        f"{latency_s:>7.2f}s",
+                        flush=True,
+                    )
 
     metrics = generate_reports(run_dir, predictions)
     rule_config = config.get("rule_first") or {}
