@@ -60,7 +60,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Run the independent second-layer LLM rewrite quality judge."
     )
-    parser.add_argument("--config", default="configs/judge/rewrite_judge_gpt4o.yaml")
+    parser.add_argument("--config", default="configs/judge/rewrite_judge_v02_gpt4o.yaml")
     parser.add_argument("--input", required=True, help="Annotated CSV from prepare script")
     parser.add_argument("--model-key")
     parser.add_argument("--name")

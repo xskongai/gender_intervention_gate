@@ -31,8 +31,18 @@ def score_judgment(row: dict[str, Any]) -> dict[str, Any]:
     d = int(row["debiasing_score"])
     n = int(row["naturalness_score"])
     if rewrite_type == "LOCAL_REPAIR":
-        special = int(row["no_added_facts_score"])
-        special_name = "no_added_facts"
+        if row.get("fidelity_score") is not None:
+            special = int(row["fidelity_score"])
+            special_name = "fidelity"
+        elif row.get("no_added_facts_score") is not None:
+            # Backward compatibility for v01 Judge outputs.
+            special = int(row["no_added_facts_score"])
+            special_name = "no_added_facts"
+        else:
+            raise ValueError(
+                "LOCAL_REPAIR judgment requires fidelity_score "
+                "(or legacy no_added_facts_score)"
+            )
     else:
         special = int(row["relevance_score"])
         special_name = "relevance"
@@ -121,11 +131,20 @@ def calculate_judge_metrics(scored_rows: list[dict[str, Any]]) -> dict[str, Any]
         ]
         if value is not None
     ]
+    local_type_specific_metric = next(
+        (
+            str(row["type_specific_metric"])
+            for row in local
+            if row.get("type_specific_metric")
+        ),
+        "fidelity",
+    )
     return {
         "overall": overall,
         "local_repair": local_metrics,
         "proposition_reconstruction": reconstruction_metrics,
         "macro_quality_score": _mean_or_none([float(v) for v in type_quality]),
+        "local_type_specific_metric": local_type_specific_metric,
     }
 
 
@@ -149,6 +168,14 @@ def _pct(value: float | None) -> str:
     return "N/A" if value is None else f"{value:.2f}"
 
 
+def _metric_label(metric_name: str) -> str:
+    return {
+        "fidelity": "Fidelity",
+        "no_added_facts": "No Added Facts",
+        "relevance": "Relevance",
+    }.get(metric_name, metric_name)
+
+
 def generate_judge_reports(
     run_dir: Path, judgments: list[dict[str, Any]]
 ) -> dict[str, Any]:
@@ -169,6 +196,7 @@ def generate_judge_reports(
     local = metrics["local_repair"]
     recon = metrics["proposition_reconstruction"]
     overall = metrics["overall"]
+    local_metric = _metric_label(metrics["local_type_specific_metric"])
     summary = f"""# Rewrite Quality Judge
 
 LLM Judge assigns only 1–3 dimension scores. Percentage normalization, weighted quality scores, verdicts, and aggregate metrics are computed by the program.
@@ -182,7 +210,7 @@ Scoring weights: Debiasing 50%, Naturalness 25%, type-specific metric 25%.
 | Overall (micro) | {overall['count']} | {_pct(overall['quality_score'])} | {_pct(overall['debiasing_score'])} | {_pct(overall['naturalness_score'])} | {_pct(overall['type_specific_score'])} | {overall['pass_rate'] * 100:.2f}% | {overall['partial_rate'] * 100:.2f}% | {overall['fail_rate'] * 100:.2f}% |
 
 - Macro quality score: {_pct(metrics['macro_quality_score'])}/100
-- Local type-specific metric: No Added Facts
+- Local type-specific metric: {local_metric}
 - Reconstruction type-specific metric: Relevance
 - Judge errors: {overall['error_count']}/{overall['count']}
 """

@@ -83,6 +83,8 @@ class ParsedJudgeScores:
     debiasing_reason: str
     naturalness_score: int
     naturalness_reason: str
+    fidelity_score: int | None
+    fidelity_reason: str | None
     no_added_facts_score: int | None
     no_added_facts_reason: str | None
     relevance_score: int | None
@@ -92,6 +94,7 @@ class ParsedJudgeScores:
 def parse_judge_output(
     raw_output: str, rewrite_type: RewriteType
 ) -> ParsedJudgeScores:
+    """Parse v02 Judge output while retaining v01 local-output compatibility."""
     payload = _extract_json_object(raw_output)
     debiasing_score, debiasing_reason = _parse_dimension(
         payload, "debiasing", required=True
@@ -99,10 +102,31 @@ def parse_judge_output(
     naturalness_score, naturalness_reason = _parse_dimension(
         payload, "naturalness", required=True
     )
+
+    fidelity_score: int | None = None
+    fidelity_reason: str | None = None
+    facts_score: int | None = None
+    facts_reason: str | None = None
+
     if rewrite_type == "LOCAL_REPAIR":
-        facts_score, facts_reason = _parse_dimension(
-            payload, "no_added_facts", required=True
-        )
+        # v02 uses fidelity. v01 used no_added_facts; accept the legacy field so
+        # older configs and cached outputs remain readable.
+        has_fidelity = payload.get("fidelity") is not None
+        has_legacy_facts = payload.get("no_added_facts") is not None
+        if has_fidelity and has_legacy_facts:
+            raise ValueError(
+                "LOCAL_REPAIR judge output must provide fidelity or "
+                "no_added_facts, not both"
+            )
+        if has_fidelity:
+            fidelity_score, fidelity_reason = _parse_dimension(
+                payload, "fidelity", required=True
+            )
+        else:
+            facts_score, facts_reason = _parse_dimension(
+                payload, "no_added_facts", required=True
+            )
+
         relevance_score, relevance_reason = _parse_dimension(
             payload, "relevance", required=False
         )
@@ -112,12 +136,16 @@ def parse_judge_output(
         relevance_score, relevance_reason = _parse_dimension(
             payload, "relevance", required=True
         )
+        fidelity_score, fidelity_reason = _parse_dimension(
+            payload, "fidelity", required=False
+        )
         facts_score, facts_reason = _parse_dimension(
             payload, "no_added_facts", required=False
         )
-        if facts_score is not None:
+        if fidelity_score is not None or facts_score is not None:
             raise ValueError(
-                "PROPOSITION_RECONSTRUCTION judge output must set no_added_facts to null"
+                "PROPOSITION_RECONSTRUCTION judge output must set fidelity and "
+                "no_added_facts to null"
             )
 
     assert debiasing_score is not None
@@ -127,6 +155,8 @@ def parse_judge_output(
         debiasing_reason=debiasing_reason or "",
         naturalness_score=naturalness_score,
         naturalness_reason=naturalness_reason or "",
+        fidelity_score=fidelity_score,
+        fidelity_reason=fidelity_reason,
         no_added_facts_score=facts_score,
         no_added_facts_reason=facts_reason,
         relevance_score=relevance_score,
@@ -161,6 +191,8 @@ class RewriteJudgePrediction:
     debiasing_reason: str | None
     naturalness_score: int | None
     naturalness_reason: str | None
+    fidelity_score: int | None
+    fidelity_reason: str | None
     no_added_facts_score: int | None
     no_added_facts_reason: str | None
     relevance_score: int | None
@@ -217,7 +249,7 @@ class RewriteQualityJudge:
         )
         messages = [{"role": "user", "content": prompt}]
         payload = {
-            "task": "rewrite_quality_judge_v01",
+            "task": f"rewrite_quality_judge:{self.prompt_version}",
             "model": self.client.model,
             "temperature": self.client.temperature,
             "max_output_tokens": self.client.max_output_tokens,
@@ -242,7 +274,7 @@ class RewriteQualityJudge:
 
 class MockPerfectRewriteJudge:
     model = "mock-perfect-judge"
-    prompt_version = "mock_perfect_judge"
+    prompt_version = "mock_perfect_judge_v02"
 
     def judge(
         self,
@@ -256,14 +288,14 @@ class MockPerfectRewriteJudge:
             payload = {
                 "debiasing": {"score": 3, "reason": "mock"},
                 "naturalness": {"score": 3, "reason": "mock"},
-                "no_added_facts": {"score": 3, "reason": "mock"},
+                "fidelity": {"score": 3, "reason": "mock"},
                 "relevance": None,
             }
         else:
             payload = {
                 "debiasing": {"score": 3, "reason": "mock"},
                 "naturalness": {"score": 3, "reason": "mock"},
-                "no_added_facts": None,
+                "fidelity": None,
                 "relevance": {"score": 3, "reason": "mock"},
             }
         return json.dumps(payload, ensure_ascii=False), 0, False, None
@@ -301,6 +333,8 @@ def build_judge_prediction(
         debiasing_reason=None if parsed is None else parsed.debiasing_reason,
         naturalness_score=None if parsed is None else parsed.naturalness_score,
         naturalness_reason=None if parsed is None else parsed.naturalness_reason,
+        fidelity_score=None if parsed is None else parsed.fidelity_score,
+        fidelity_reason=None if parsed is None else parsed.fidelity_reason,
         no_added_facts_score=None
         if parsed is None
         else parsed.no_added_facts_score,

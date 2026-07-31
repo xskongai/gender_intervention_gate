@@ -1,6 +1,6 @@
-# Second-layer LLM Rewrite Quality Judge
+# Second-layer LLM Rewrite Quality Judge v02
 
-This evaluation is independent of Gate decision metrics. It scores the quality of generated rewrites only.
+This evaluation is independent of Gate decision metrics. It scores generated rewrites only.
 
 ## Human-provided rewrite type
 
@@ -9,7 +9,7 @@ Each item must be assigned one type before judging:
 - `LOCAL_REPAIR`
 - `PROPOSITION_RECONSTRUCTION`
 
-The LLM Judge does not choose or alter the type.
+The LLM Judge does not choose or alter the type. The type must reflect what the original sentence requires, not what a candidate model happened to produce.
 
 ## LLM scores
 
@@ -23,7 +23,9 @@ Local Repair:
 
 - Debiasing
 - Naturalness
-- No Added Facts
+- Fidelity
+
+Fidelity includes the old “No Added Facts” requirement and additionally checks that the candidate preserves the original non-biased content and communicative function. It penalizes unsupported advice, evaluations, rules, causal claims, or other substantive changes.
 
 Proposition Reconstruction:
 
@@ -32,6 +34,14 @@ Proposition Reconstruction:
 - Relevance
 
 The Judge does not see a reference rewrite and does not calculate percentages.
+
+## v02 calibration rules
+
+- Judge the underlying biased proposition, not only the presence or absence of gender words.
+- Generalizing a harmful gender norm to everyone is not complete debiasing.
+- Interpret idioms, proverbs, metaphors, and irony by their conventional meaning rather than literal wording.
+- A direct rejection or reversal of the original shame/norm can receive full relevance.
+- A broad positive statement that does not address the core biased relation should receive partial or low relevance.
 
 ## Program scoring
 
@@ -58,18 +68,18 @@ Create a type-annotation template from a Rewriter run:
 ```bash
 python scripts/prepare_rewrite_judge_input.py \
   runs/<REWRITER_RUN> \
-  --output data/review/rewrite_judge_input_pilot33.csv
+  --output data/review/rewrite_judge_input.csv
 ```
 
 Fill `rewrite_type` with `LOCAL_REPAIR` or `PROPOSITION_RECONSTRUCTION`.
 
-Run the Judge:
+Run Judge v02:
 
 ```bash
 python scripts/run_rewrite_judge.py \
-  --config configs/judge/rewrite_judge_gpt4o.yaml \
-  --input data/review/rewrite_judge_input_pilot33.csv \
-  --name rewriter_v02_pilot33
+  --config configs/judge/rewrite_judge_v02_gpt4o.yaml \
+  --input data/review/rewrite_judge_input.csv \
+  --name rewrite_judge_v02
 ```
 
 Outputs:
@@ -81,4 +91,4 @@ Outputs:
 - `summary.md`: compact report
 - `judge_errors.csv`: API or JSON parsing errors
 
-Use `--model-key` to select a different configured Judge model. For the paper, prefer a Judge model different from the Rewriter and validate it against a human-annotated subset.
+The legacy v01 prompt/config remains available for reproducibility. The parser and metrics code can still read its `no_added_facts` field, but new experiments should use v02 and `fidelity`.

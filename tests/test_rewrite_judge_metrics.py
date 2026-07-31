@@ -11,19 +11,36 @@ def test_normalize_dimension_score() -> None:
     assert normalize_dimension_score(3) == 100
 
 
-def test_score_local_judgment() -> None:
+def test_score_local_v02_judgment() -> None:
     row = {
         "id": "P1",
         "rewrite_type": "LOCAL_REPAIR",
         "debiasing_score": 3,
         "naturalness_score": 2,
-        "no_added_facts_score": 3,
+        "fidelity_score": 3,
+        "no_added_facts_score": None,
         "relevance_score": None,
         "error": None,
     }
     scored = score_judgment(row)
     assert scored["quality_score"] == 87.5
     assert scored["verdict"] == "PARTIAL"
+    assert scored["type_specific_metric"] == "fidelity"
+
+
+def test_score_local_v01_legacy_judgment() -> None:
+    row = {
+        "id": "P1",
+        "rewrite_type": "LOCAL_REPAIR",
+        "debiasing_score": 3,
+        "naturalness_score": 3,
+        "fidelity_score": None,
+        "no_added_facts_score": 3,
+        "relevance_score": None,
+        "error": None,
+    }
+    scored = score_judgment(row)
+    assert scored["quality_score"] == 100
     assert scored["type_specific_metric"] == "no_added_facts"
 
 
@@ -33,6 +50,7 @@ def test_score_reconstruction_fail() -> None:
         "rewrite_type": "PROPOSITION_RECONSTRUCTION",
         "debiasing_score": 3,
         "naturalness_score": 3,
+        "fidelity_score": None,
         "no_added_facts_score": None,
         "relevance_score": 1,
         "error": None,
@@ -49,7 +67,8 @@ def test_calculate_macro_quality() -> None:
                 "rewrite_type": "LOCAL_REPAIR",
                 "debiasing_score": 3,
                 "naturalness_score": 3,
-                "no_added_facts_score": 3,
+                "fidelity_score": 3,
+                "no_added_facts_score": None,
                 "relevance_score": None,
                 "error": None,
             }
@@ -59,6 +78,7 @@ def test_calculate_macro_quality() -> None:
                 "rewrite_type": "PROPOSITION_RECONSTRUCTION",
                 "debiasing_score": 2,
                 "naturalness_score": 2,
+                "fidelity_score": None,
                 "no_added_facts_score": None,
                 "relevance_score": 2,
                 "error": None,
@@ -69,3 +89,4 @@ def test_calculate_macro_quality() -> None:
     assert metrics["local_repair"]["quality_score"] == 100
     assert metrics["proposition_reconstruction"]["quality_score"] == 50
     assert metrics["macro_quality_score"] == 75
+    assert metrics["local_type_specific_metric"] == "fidelity"
