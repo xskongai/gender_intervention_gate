@@ -1,29 +1,60 @@
 models:
   openai:
+    provider: openai
     api_key_env: OPENAI_API_KEY
     model_env: OPENAI_MODEL
     base_url: null
     timeout_seconds: 120
-
+  openai_judge:
+    provider: openai
+    api_key_env: OPENAI_API_KEY
+    model: gpt-4o
+    base_url: null
+    timeout_seconds: 120
+  gemini:
+    provider: gemini
+    api_key_env: GEMINI_API_KEY
+    model_env: GEMINI_MODEL
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+    timeout_seconds: 120
   deepseek:
+    provider: deepseek
     api_key_env: DEEPSEEK_API_KEY
     model_env: DEEPSEEK_MODEL
     base_url: https://api.deepseek.com
     timeout_seconds: 120
-
+    extra_body:
+      thinking:
+        type: enabled
+      reasoning_effort: high
   qwen:
+    provider: qwen
     api_key_env: QWEN_API_KEY
     model_env: QWEN_MODEL
     base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-    timeout_seconds: 120
-
+    base_url_env: QWEN_BASE_URL
+    timeout_seconds: 180
+    # Qwen thinking models recommend max_completion_tokens because it covers
+    # both reasoning_content and the final answer.
+    max_tokens_field: max_completion_tokens
+    extra_body:
+      enable_thinking: true
+      # The default Qwen3.7 reasoning budget can be extremely large. The Gate
+      # only needs a binary decision, so cap reasoning and leave room for the
+      # final POSITIVE/NEGATIVE label.
+      thinking_budget: 512
   glm:
+    provider: glm
     api_key_env: GLM_API_KEY
     model_env: GLM_MODEL
     base_url: https://open.bigmodel.cn/api/paas/v4/
     timeout_seconds: 120
-
+    extra_body:
+      thinking:
+        type: enabled
+      reasoning_effort: high
   local:
+    provider: local
     api_key_env: LOCAL_API_KEY
     model_env: LOCAL_MODEL
     base_url_env: LOCAL_BASE_URL

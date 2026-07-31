@@ -39,8 +39,20 @@ def main() -> None:
     parser.add_argument("--config", required=True)
     parser.add_argument("--split")
     parser.add_argument("--model-key")
+    parser.add_argument("--model", help="Exact model id; overrides the provider model environment variable.")
     parser.add_argument("--name")
     parser.add_argument("--limit", type=int)
+    parser.add_argument("--concurrency", type=int)
+    parser.add_argument(
+        "--max-output-tokens",
+        type=int,
+        help="Override the Gate output-token budget for this run.",
+    )
+    parser.add_argument(
+        "--thinking-budget",
+        type=int,
+        help="Override provider thinking_budget via extra_body (useful for Qwen).",
+    )
     rule_group = parser.add_mutually_exclusive_group()
     rule_group.add_argument(
         "--rule-first",
@@ -63,8 +75,24 @@ def main() -> None:
         config["split"] = args.split
     if args.model_key:
         config["model_key"] = args.model_key
+    if args.model:
+        config["model"] = args.model
     if args.name:
         config["name"] = args.name
+    if args.concurrency is not None:
+        if args.concurrency <= 0:
+            raise ValueError("--concurrency must be positive")
+        config["concurrency"] = args.concurrency
+    if args.max_output_tokens is not None:
+        if args.max_output_tokens <= 0:
+            raise ValueError("--max-output-tokens must be positive")
+        config["max_output_tokens"] = args.max_output_tokens
+    if args.thinking_budget is not None:
+        if args.thinking_budget <= 0:
+            raise ValueError("--thinking-budget must be positive")
+        extra_body = dict(config.get("extra_body") or {})
+        extra_body["thinking_budget"] = args.thinking_budget
+        config["extra_body"] = extra_body
 
     override: bool | None = None
     if args.rule_first:
@@ -169,6 +197,7 @@ def main() -> None:
     )
     print(f"Rule coverage: {metrics['routing']['rule_coverage']:.4f}")
     print(f"LLM call rate: {metrics['routing']['llm_call_rate']:.4f}")
+    print(f"Format error rate: {metrics['format_error_rate']:.4f}")
     print(f"Passes 90% target: {metrics['passes_90_target']}")
 
 

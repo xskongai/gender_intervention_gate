@@ -72,8 +72,10 @@ class PositiveTextRewriter:
         messages = [{"role": "user", "content": prompt}]
         payload = {
             "task": "positive_gender_inclusive_rewriter",
+            "provider": self.client.provider,
             "model": self.client.model,
             "temperature": self.client.temperature,
+            "extra_body": self.client.extra_body,
             "max_output_tokens": self.client.max_output_tokens,
             "max_tokens_field": self.client.max_tokens_field,
             "messages": messages,

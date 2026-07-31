@@ -64,8 +64,10 @@ def main() -> None:
     parser.add_argument("--config", default="configs/judge/rewrite_judge_v02_gpt4o.yaml")
     parser.add_argument("--input", required=True, help="Annotated CSV from prepare script")
     parser.add_argument("--model-key")
+    parser.add_argument("--model", help="Exact model id; overrides the provider model environment variable.")
     parser.add_argument("--name")
     parser.add_argument("--limit", type=int)
+    parser.add_argument("--concurrency", type=int)
     parser.add_argument(
         "--mock-perfect",
         action="store_true",
@@ -79,8 +81,14 @@ def main() -> None:
     config: dict[str, Any] = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if args.model_key:
         config["model_key"] = args.model_key
+    if args.model:
+        config["model"] = args.model
     if args.name:
         config["name"] = args.name
+    if args.concurrency is not None:
+        if args.concurrency <= 0:
+            raise ValueError("--concurrency must be positive")
+        config["concurrency"] = args.concurrency
     config["input"] = args.input
     config["mock_perfect"] = bool(args.mock_perfect)
 

@@ -5,7 +5,7 @@ split: data/splits/group_aware_v2.3/dev_pilot_60.jsonl
 prompt: prompts/v03_contrastive.txt
 examples: prompts/examples/contrastive_v1.jsonl
 temperature: 0
-max_output_tokens: 8
+max_output_tokens: 2048
 max_tokens_field: max_tokens
 concurrency: 5
 retries: 3

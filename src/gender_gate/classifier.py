@@ -69,8 +69,10 @@ class BinaryClassifier:
         prompt = render_prompt(self.template, item.text, self.examples)
         messages = [{"role": "user", "content": prompt}]
         payload = {
+            "provider": self.client.provider,
             "model": self.client.model,
             "temperature": self.client.temperature,
+            "extra_body": self.client.extra_body,
             "max_output_tokens": self.client.max_output_tokens,
             "max_tokens_field": self.client.max_tokens_field,
             "messages": messages,

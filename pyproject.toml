@@ -8,7 +8,7 @@ version = "0.4.0"
 description = "Binary intervention gate for Chinese gender-inclusive rewriting"
 requires-python = ">=3.10"
 dependencies = [
-  "openai>=1.30.0",
+  "openai>=1.55.0",
   "python-dotenv>=1.0.1",
   "PyYAML>=6.0.1",
 ]

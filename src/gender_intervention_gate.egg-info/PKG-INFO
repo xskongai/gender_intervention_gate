@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: gender-intervention-gate
+Version: 0.4.0
+Summary: Binary intervention gate for Chinese gender-inclusive rewriting
+Requires-Python: >=3.10
+Requires-Dist: openai>=1.55.0
+Requires-Dist: python-dotenv>=1.0.1
+Requires-Dist: PyYAML>=6.0.1
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"

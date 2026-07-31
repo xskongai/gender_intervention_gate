@@ -4,7 +4,7 @@ models_config: configs/models.yaml
 split: data/splits/group_aware_v2.3/dev_pilot_positive_33.jsonl
 prompt: prompts/rewriter_v02_semantic_preserving.txt
 temperature: 0
-max_output_tokens: 256
+max_output_tokens: 4096
 max_tokens_field: max_tokens
 concurrency: 5
 retries: 3

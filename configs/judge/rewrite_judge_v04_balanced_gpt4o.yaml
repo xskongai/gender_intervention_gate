@@ -1,5 +1,5 @@
 name: rewrite_judge_v04_balanced
-model_key: openai
+model_key: openai_judge
 models_config: configs/models.yaml
 prompt: prompts/rewrite_judge_v04_balanced.txt
 temperature: 0
