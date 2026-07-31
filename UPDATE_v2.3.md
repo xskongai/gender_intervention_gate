@@ -10,3 +10,14 @@
 - Updated tests, manifests, and documentation.
 - Removed stale v2.1 review queue artifacts; retained a compact v2.3 change log.
 - Validation result: 11 tests passed.
+
+## End-to-end rewrite runner
+
+Added in code version 0.3.0:
+
+- `scripts/run_rewrite_experiment.py`
+- `scripts/compare_rewrite_runs.py`
+- `configs/rewrite/rewrite_gpt4o.yaml`
+- `prompts/rewrite_v01.txt`
+- change-based endpoint metrics and conservative semantic review queues
+- offline `--mock-oracle` plumbing mode, explicitly excluded from experimental reporting

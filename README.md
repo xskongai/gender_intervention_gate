@@ -128,3 +128,69 @@ The test split should remain frozen until prompt, examples, model selection, and
 ## Outputs
 
 Each experiment writes a reproducible run directory containing the copied config and prompt, predictions, metrics, error slices, and SHA-256 hashes of the dataset and split.
+
+## End-to-end rewrite comparison
+
+Use the same rewrite model, prompt, split, temperature, and token settings for both systems. The only difference is whether the frozen Gate is applied before rewriting.
+
+### 1. Direct Rewrite
+
+```bash
+python scripts/run_rewrite_experiment.py \
+  --config configs/rewrite/rewrite_gpt4o.yaml \
+  --mode direct \
+  --split data/splits/group_aware_v2.3/dev_pilot_60.jsonl \
+  --name direct_rewrite_pilot_v23
+```
+
+### 2. Gate + Rewrite
+
+Pass the completed Gate run directory whose `predictions.jsonl` covers the same split:
+
+```bash
+python scripts/run_rewrite_experiment.py \
+  --config configs/rewrite/rewrite_gpt4o.yaml \
+  --mode gated \
+  --gate-run runs/<GATE_RUN_DIRECTORY> \
+  --split data/splits/group_aware_v2.3/dev_pilot_60.jsonl \
+  --name gated_rewrite_pilot_v23
+```
+
+For the full development set, replace the split with:
+
+```text
+data/splits/group_aware_v2.3/dev.jsonl
+```
+
+Each rewrite run produces:
+
+- `predictions.jsonl` and `predictions.csv`
+- `metrics.json` and `summary.md`
+- `positive_failures.csv`
+- `negative_over_edits.csv`
+- `semantic_review_queue.csv`
+- `errors.csv`
+- `manifest.json`
+
+The automatic endpoint metrics are change-based:
+
+- **Negative preservation**: proportion of Negative inputs returned unchanged.
+- **Over-edit rate**: proportion of Negative inputs changed.
+- **Positive intervention rate**: proportion of Positive inputs changed.
+- **Under-edit rate**: proportion of Positive inputs left unchanged.
+
+A changed Positive is not automatically a successful rewrite. Review `semantic_review_queue.csv` and score bias removal and semantic preservation separately before reporting final rewrite quality.
+
+### 3. Compare two runs
+
+```bash
+python scripts/compare_rewrite_runs.py \
+  runs/<DIRECT_RUN_DIRECTORY> \
+  runs/<GATED_RUN_DIRECTORY> \
+  --output runs/rewrite_comparison.md
+```
+
+### Offline plumbing smoke test
+
+`--mock-oracle` is provided only to verify the pipeline without API calls. Its metrics must never be reported as experimental results.
+
