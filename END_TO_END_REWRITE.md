@@ -1,3 +1,14 @@
+
+## Rewrite Prompt control
+
+The default rewrite prompt is the original direct-prompt baseline used in the earlier experiments:
+
+- `prompts/rewrite_original_direct.txt`
+- Direct mode sends every sample to this prompt.
+- Gated mode bypasses samples predicted `NEGATIVE`; samples predicted `POSITIVE` are sent to the exact same prompt.
+
+Therefore, the only experimental difference is the external intervention gate. The richer semantics-preserving prompt is retained only as an optional ablation at `prompts/rewrite_semantic_minimal_v01.txt`.
+
 # End-to-End Rewrite Experiment
 
 ## Goal

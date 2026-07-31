@@ -194,3 +194,7 @@ python scripts/compare_rewrite_runs.py \
 
 `--mock-oracle` is provided only to verify the pipeline without API calls. Its metrics must never be reported as experimental results.
 
+
+## Independent Rewriter v02
+
+The Gate and Rewriter are evaluated as separate modules. For the POSITIVE-only Rewriter workflow, see [`REWRITER_EXPERIMENT.md`](REWRITER_EXPERIMENT.md). The independent runner is `scripts/run_rewriter_experiment.py`; it does not accept or read Gate predictions.

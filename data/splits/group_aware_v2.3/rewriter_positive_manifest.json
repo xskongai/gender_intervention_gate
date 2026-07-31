@@ -1,0 +1,25 @@
+{
+  "purpose": "Independent POSITIVE-only rewriter evaluation. No Gate predictions are read or used.",
+  "splits": [
+    {
+      "source": "data/splits/group_aware_v2.3/dev_pilot_60.jsonl",
+      "source_sha256": "79ba25edd9449911a1a1800283f94a2844172cc147c9859679d5bdccaf7ea329",
+      "output": "data/splits/group_aware_v2.3/dev_pilot_positive_33.jsonl",
+      "output_sha256": "ab33c764159e1a5a78464f3a728bb01eea66bb59c221d4dd333b3b66a943debc",
+      "source_count": 60,
+      "positive_count": 33,
+      "negative_count_removed": 27
+    },
+    {
+      "source": "data/splits/group_aware_v2.3/dev.jsonl",
+      "source_sha256": "3338f655104c63fa602037c63f3a8dfc1fb75ab176db31d0e88a35cbc20006a5",
+      "output": "data/splits/group_aware_v2.3/dev_positive_219.jsonl",
+      "output_sha256": "689cf0795d92f2ad63cb0de1c98112c703eba283451d181fc459d69502222a4f",
+      "source_count": 400,
+      "positive_count": 219,
+      "negative_count_removed": 181
+    }
+  ],
+  "test_split_created": false,
+  "note": "The held-out test split remains untouched until the rewriter design and evaluation protocol are frozen."
+}
