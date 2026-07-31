@@ -1,0 +1,11 @@
+name: rewriter_v03_minimal_sufficient
+model_key: openai
+models_config: configs/models.yaml
+split: data/splits/group_aware_v2.3/dev_positive_219.jsonl
+prompt: prompts/rewriter_v03_minimal_sufficient.txt
+temperature: 0
+max_output_tokens: 256
+max_tokens_field: max_tokens
+concurrency: 5
+retries: 3
+cache_db: .cache/llm_cache.sqlite

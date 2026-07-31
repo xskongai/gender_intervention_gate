@@ -1,0 +1,14 @@
+name: rewrite_judge_v03_split
+judge_mode: split_dimensions
+model_key: openai
+models_config: configs/models.yaml
+prompts:
+  debiasing: prompts/rewrite_judge_v03_debiasing.txt
+  naturalness: prompts/rewrite_judge_v03_naturalness.txt
+  type_specific: prompts/rewrite_judge_v03_type_specific.txt
+temperature: 0
+max_output_tokens: 160
+max_tokens_field: max_tokens
+concurrency: 5
+retries: 3
+cache_db: .cache/llm_cache.sqlite

@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from gender_gate.rewrite_judge import (
     MockPerfectRewriteJudge,
     RewriteQualityJudge,
+    SplitRewriteQualityJudge,
     build_judge_prediction,
     normalize_rewrite_type,
 )
@@ -99,7 +100,10 @@ def main() -> None:
         model_key = str(config["model_key"])
         if model_key not in models:
             raise KeyError(f"Unknown model_key: {model_key}")
-        judge = RewriteQualityJudge(models[model_key], config, root)
+        if config.get("judge_mode") == "split_dimensions":
+            judge = SplitRewriteQualityJudge(models[model_key], config, root)
+        else:
+            judge = RewriteQualityJudge(models[model_key], config, root)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     suffix = args.name or config.get("name") or "rewrite_judge"
@@ -108,8 +112,18 @@ def main() -> None:
     (run_dir / "config.yaml").write_text(
         yaml.safe_dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8"
     )
-    prompt_path = resolve_path(root, str(config["prompt"]))
-    shutil.copy2(prompt_path, run_dir / "prompt.txt")
+    prompt_hashes: dict[str, str] = {}
+    if isinstance(judge, SplitRewriteQualityJudge):
+        prompts_dir = run_dir / "prompts"
+        prompts_dir.mkdir(parents=True, exist_ok=True)
+        for dimension, prompt_path in judge.prompt_paths.items():
+            destination = prompts_dir / f"{dimension}.txt"
+            shutil.copy2(prompt_path, destination)
+            prompt_hashes[dimension] = sha256_file(prompt_path)
+    elif not args.mock_perfect:
+        prompt_path = resolve_path(root, str(config["prompt"]))
+        shutil.copy2(prompt_path, run_dir / "prompt.txt")
+        prompt_hashes["combined"] = sha256_file(prompt_path)
     shutil.copy2(input_path, run_dir / "judge_input.csv")
 
     judgments: list[dict[str, Any]] = []
@@ -136,7 +150,9 @@ def main() -> None:
         "count": len(rows),
         "input": str(input_path),
         "input_sha256": sha256_file(input_path),
-        "prompt_sha256": sha256_file(prompt_path),
+        "prompt_sha256": prompt_hashes,
+        "judge_mode": config.get("judge_mode", "combined"),
+        "llm_calls_per_item": 3 if config.get("judge_mode") == "split_dimensions" else 1,
         "metrics": metrics,
     }
     (run_dir / "manifest.json").write_text(

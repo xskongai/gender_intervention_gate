@@ -77,6 +77,20 @@ def _parse_dimension(
     return score, reason.strip()
 
 
+def parse_single_dimension_output(raw_output: str) -> tuple[int, str]:
+    """Parse the compact output used by one-dimensional split judges."""
+    payload = _extract_json_object(raw_output)
+    score = payload.get("score")
+    if isinstance(score, str) and score.strip().isdigit():
+        score = int(score.strip())
+    if not isinstance(score, int) or score not in {1, 2, 3}:
+        raise ValueError("Split judge score must be 1, 2, or 3")
+    reason = payload.get("reason", "")
+    if not isinstance(reason, str):
+        reason = str(reason)
+    return score, reason.strip()
+
+
 @dataclass(frozen=True)
 class ParsedJudgeScores:
     debiasing_score: int
@@ -272,6 +286,160 @@ class RewriteQualityJudge:
         return raw_output, latency_ms, cache_hit, error
 
 
+class SplitRewriteQualityJudge:
+    """Run three independent one-dimensional judges and merge their scores."""
+
+    REQUIRED_PROMPTS = ("debiasing", "naturalness", "type_specific")
+
+    def __init__(
+        self,
+        model_config: dict[str, Any],
+        experiment_config: dict[str, Any],
+        project_root: Path,
+    ):
+        prompt_values = experiment_config.get("prompts")
+        if not isinstance(prompt_values, dict):
+            raise ValueError(
+                "split_dimensions judge requires a prompts mapping with "
+                "debiasing, naturalness, and type_specific"
+            )
+        missing = [name for name in self.REQUIRED_PROMPTS if name not in prompt_values]
+        if missing:
+            raise ValueError(f"Missing split judge prompts: {missing}")
+
+        self.prompt_paths: dict[str, Path] = {}
+        self.templates: dict[str, str] = {}
+        for name in self.REQUIRED_PROMPTS:
+            value = Path(str(prompt_values[name])).expanduser()
+            path = value if value.is_absolute() else project_root / value
+            self.prompt_paths[name] = path
+            self.templates[name] = load_text(path)
+
+        self.client = OpenAICompatibleClient(model_config, experiment_config)
+        cache_value = Path(str(experiment_config["cache_db"])).expanduser()
+        cache_path = (
+            cache_value if cache_value.is_absolute() else project_root / cache_value
+        )
+        self.cache = SQLiteCache(cache_path)
+        stems = "+".join(self.prompt_paths[name].stem for name in self.REQUIRED_PROMPTS)
+        self.prompt_version = f"split:{stems}"
+
+    @property
+    def model(self) -> str:
+        return self.client.model
+
+    def _call_dimension(
+        self,
+        *,
+        dimension: str,
+        item_id: str,
+        rewrite_type: RewriteType,
+        text: str,
+        output: str,
+    ) -> tuple[str, int, bool, str | None]:
+        prompt = render_judge_prompt(
+            self.templates[dimension],
+            item_id=item_id,
+            rewrite_type=rewrite_type,
+            text=text,
+            output=output,
+        )
+        messages = [{"role": "user", "content": prompt}]
+        payload = {
+            "task": f"rewrite_quality_judge_split:{dimension}:{self.prompt_paths[dimension].stem}",
+            "model": self.client.model,
+            "temperature": self.client.temperature,
+            "max_output_tokens": self.client.max_output_tokens,
+            "max_tokens_field": self.client.max_tokens_field,
+            "messages": messages,
+        }
+        key = request_key(payload)
+        started = time.perf_counter()
+        cached = self.cache.get(key)
+        cache_hit = cached is not None
+        raw_output = cached or ""
+        error = None
+        if cached is None:
+            try:
+                raw_output = self.client.complete(messages)
+                self.cache.put(key, raw_output)
+            except Exception as exc:  # pragma: no cover - provider dependent
+                error = f"{type(exc).__name__}: {exc}"
+        latency_ms = int((time.perf_counter() - started) * 1000)
+        return raw_output, latency_ms, cache_hit, error
+
+    def judge(
+        self,
+        *,
+        item_id: str,
+        rewrite_type: RewriteType,
+        text: str,
+        output: str,
+    ) -> tuple[str, int, bool, str | None]:
+        dimensions = ["debiasing", "naturalness", "type_specific"]
+        raw_by_dimension: dict[str, str] = {}
+        parsed_by_dimension: dict[str, tuple[int, str]] = {}
+        errors: list[str] = []
+        total_latency_ms = 0
+        all_cache_hits = True
+
+        for dimension in dimensions:
+            raw, latency_ms, cache_hit, error = self._call_dimension(
+                dimension=dimension,
+                item_id=item_id,
+                rewrite_type=rewrite_type,
+                text=text,
+                output=output,
+            )
+            raw_by_dimension[dimension] = raw
+            total_latency_ms += latency_ms
+            all_cache_hits = all_cache_hits and cache_hit
+            if error is not None:
+                errors.append(f"{dimension}: {error}")
+                continue
+            try:
+                parsed_by_dimension[dimension] = parse_single_dimension_output(raw)
+            except Exception as exc:
+                errors.append(f"{dimension}: JUDGE_PARSE_ERROR: {exc}")
+
+        if errors:
+            audit_payload = {
+                "dimension_raw_outputs": raw_by_dimension,
+                "errors": errors,
+            }
+            return (
+                json.dumps(audit_payload, ensure_ascii=False),
+                total_latency_ms,
+                all_cache_hits,
+                "; ".join(errors),
+            )
+
+        d_score, d_reason = parsed_by_dimension["debiasing"]
+        n_score, n_reason = parsed_by_dimension["naturalness"]
+        special_score, special_reason = parsed_by_dimension["type_specific"]
+        if rewrite_type == "LOCAL_REPAIR":
+            combined: dict[str, Any] = {
+                "debiasing": {"score": d_score, "reason": d_reason},
+                "naturalness": {"score": n_score, "reason": n_reason},
+                "fidelity": {"score": special_score, "reason": special_reason},
+                "relevance": None,
+            }
+        else:
+            combined = {
+                "debiasing": {"score": d_score, "reason": d_reason},
+                "naturalness": {"score": n_score, "reason": n_reason},
+                "fidelity": None,
+                "relevance": {"score": special_score, "reason": special_reason},
+            }
+        combined["_dimension_raw_outputs"] = raw_by_dimension
+        return (
+            json.dumps(combined, ensure_ascii=False),
+            total_latency_ms,
+            all_cache_hits,
+            None,
+        )
+
+
 class MockPerfectRewriteJudge:
     model = "mock-perfect-judge"
     prompt_version = "mock_perfect_judge_v02"
@@ -303,7 +471,7 @@ class MockPerfectRewriteJudge:
 
 def build_judge_prediction(
     row: dict[str, Any],
-    judge: RewriteQualityJudge | MockPerfectRewriteJudge,
+    judge: RewriteQualityJudge | SplitRewriteQualityJudge | MockPerfectRewriteJudge,
 ) -> RewriteJudgePrediction:
     rewrite_type = normalize_rewrite_type(str(row["rewrite_type"]))
     item_id = str(row["id"])

@@ -94,3 +94,19 @@ Use `paired_manual_review.csv` for the authoritative comparison. Exact reference
 ## Decision rule before Full Dev
 
 Proceed to the 219-item Dev Positive split only if v02 improves strict PASS rate or reduces the named failure modes without materially increasing meaning distortion or unsupported insertion.
+
+## Candidate v03
+
+`Rewrite v03` adds a minimal-sufficient constraint: completely remove the core biased proposition, then minimize all other textual changes.
+
+- Prompt: `prompts/rewriter_v03_minimal_sufficient.txt`
+- Config: `configs/rewriter/rewriter_v03_gpt4o.yaml`
+- Detailed instructions: `UPDATE_REWRITER_V03.md`
+
+```bash
+python scripts/run_rewriter_experiment.py \
+  --config configs/rewriter/rewriter_v03_gpt4o.yaml \
+  --name rewriter_v03_dev219
+```
+
+Evaluate v03 with the frozen Judge v02 and the same frozen rewrite-type map used for v01 and v02.
