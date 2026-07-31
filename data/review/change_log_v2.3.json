@@ -1,0 +1,16 @@
+{
+  "dataset_version": "v2.3",
+  "status": "finalized_for_gate_experiments",
+  "negative_deleted": {
+    "NEG-0528": "Requires external context to establish an all-female class.",
+    "NEG-1038": "Necessity of 男女双方 is context-dependent.",
+    "NEG-1039": "Historical relevance of 首位女性裁判 depends on article context.",
+    "NEG-1041": "Potential exclusion of non-parent legal guardians.",
+    "NEG-1042": "Whether 先生 is verified cannot be determined from the sentence.",
+    "NEG-1043": "Whether the anesthetist is a known male cannot be determined.",
+    "NEG-1044": "Historical relevance of 首位女性CFO depends on organization context."
+  },
+  "negative_fixed": {
+    "NEG-0449": "Expected output restored to the unchanged input."
+  }
+}

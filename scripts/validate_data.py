@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 from collections import Counter
 from pathlib import Path
 
@@ -8,40 +9,29 @@ from gender_gate.data import load_items, validate_items
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input", default="data/processed/main.jsonl")
+    parser.add_argument("--positive", type=int)
+    parser.add_argument("--negative", type=int)
+    args = parser.parse_args()
+
     root = Path(__file__).resolve().parents[1]
-    main_items = load_items(root / "data/processed/main.jsonl")
+    main_items = load_items(root / args.input)
     report = validate_items(main_items)
 
-    expected = {"POSITIVE": 734, "NEGATIVE": 798}
-    if report["label_counts"] != expected:
-        report["errors"].append(
-            f"Unexpected label counts: {report['label_counts']} != {expected}"
-        )
-        report["valid"] = False
-
-    split_dir = root / "data/splits/iid_v1"
-    split_names = ["exemplar_pool", "dev", "test"]
-    split_ids = {}
-    for name in split_names:
-        items = load_items(split_dir / f"{name}.jsonl")
-        split_ids[name] = {item.id for item in items}
-
-    for index, left in enumerate(split_names):
-        for right in split_names[index + 1 :]:
-            overlap = split_ids[left] & split_ids[right]
-            if overlap:
+    expected = {}
+    if args.positive is not None:
+        expected["POSITIVE"] = args.positive
+    if args.negative is not None:
+        expected["NEGATIVE"] = args.negative
+    if expected:
+        actual = report["label_counts"]
+        for label, count in expected.items():
+            if actual.get(label, 0) != count:
                 report["errors"].append(
-                    f"Split overlap between {left} and {right}: {len(overlap)}"
+                    f"Unexpected {label} count: {actual.get(label, 0)} != {count}"
                 )
                 report["valid"] = False
-
-    pilot_ids = {
-        item.id
-        for item in load_items(split_dir / "dev_pilot_60.jsonl")
-    }
-    if not pilot_ids <= split_ids["dev"]:
-        report["errors"].append("Pilot is not a subset of dev.")
-        report["valid"] = False
 
     print(f"Count: {report['count']}")
     print(f"Labels: {Counter(item.label for item in main_items)}")

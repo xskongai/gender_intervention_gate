@@ -1,7 +1,7 @@
 name: contrastive_fewshot_pilot
 model_key: openai
 models_config: configs/models.yaml
-split: data/splits/iid_v1/dev_pilot_60.jsonl
+split: data/splits/group_aware_v2.3/dev_pilot_60.jsonl
 prompt: prompts/v03_contrastive.txt
 examples: prompts/examples/contrastive_v1.jsonl
 temperature: 0

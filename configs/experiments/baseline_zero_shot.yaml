@@ -1,7 +1,7 @@
 name: baseline_zero_shot_pilot
 model_key: openai
 models_config: configs/models.yaml
-split: data/splits/iid_v1/dev_pilot_60.jsonl
+split: data/splits/group_aware_v2.3/dev_pilot_60.jsonl
 prompt: prompts/v01_direct.txt
 examples: null
 temperature: 0

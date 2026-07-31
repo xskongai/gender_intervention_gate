@@ -1,0 +1,22 @@
+{
+  "dataset_version": "v2.3",
+  "mode": "iid",
+  "seed": {
+    "exemplar": 42,
+    "dev": 43,
+    "pilot": 44
+  },
+  "counts": {
+    "main": 1588,
+    "labels": {
+      "POSITIVE": 871,
+      "NEGATIVE": 717
+    },
+    "exemplar_pool": 80,
+    "dev": 400,
+    "pilot": 60,
+    "test": 1108
+  },
+  "template_groups": 34,
+  "note": "Row-level stratified random split retained for baseline comparability."
+}

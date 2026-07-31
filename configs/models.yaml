@@ -1,0 +1,31 @@
+models:
+  openai:
+    api_key_env: OPENAI_API_KEY
+    model_env: OPENAI_MODEL
+    base_url: null
+    timeout_seconds: 120
+
+  deepseek:
+    api_key_env: DEEPSEEK_API_KEY
+    model_env: DEEPSEEK_MODEL
+    base_url: https://api.deepseek.com
+    timeout_seconds: 120
+
+  qwen:
+    api_key_env: QWEN_API_KEY
+    model_env: QWEN_MODEL
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    timeout_seconds: 120
+
+  glm:
+    api_key_env: GLM_API_KEY
+    model_env: GLM_MODEL
+    base_url: https://open.bigmodel.cn/api/paas/v4/
+    timeout_seconds: 120
+
+  local:
+    api_key_env: LOCAL_API_KEY
+    model_env: LOCAL_MODEL
+    base_url_env: LOCAL_BASE_URL
+    timeout_seconds: 180
+    allow_missing_key: true

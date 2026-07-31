@@ -1,0 +1,32 @@
+{
+  "dataset_version": "v2.3",
+  "counts": {
+    "total": 1588,
+    "positive": 871,
+    "negative": 717
+  },
+  "source_workbooks": {
+    "positive": "data/raw/source_workbooks/positive_v2.3_main_only_clean.xlsx",
+    "negative": "data/raw/source_workbooks/negative_v2.3_main_only_clean.xlsx"
+  },
+  "processed": {
+    "path": "data/processed/main.jsonl",
+    "sha256": "c476386e658eee208594642410f17d3ec223d22ac4b17275fb865e391af35f26"
+  },
+  "splits": {
+    "recommended": "data/splits/group_aware_v2.3",
+    "comparison": "data/splits/iid_v2.3",
+    "exemplar_pool": 80,
+    "dev": 400,
+    "pilot": 60,
+    "test": 1108
+  },
+  "cleaning": {
+    "negative_boundary_samples_removed": 7,
+    "negative_expected_output_fixed": [
+      "NEG-0449"
+    ],
+    "template_positive_samples": 414,
+    "template_groups": 34
+  }
+}
