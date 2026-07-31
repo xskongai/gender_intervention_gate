@@ -31,6 +31,16 @@ def command_text(command: list[str]) -> str:
     return " ".join(shlex.quote(part) for part in command)
 
 
+def profile_mode_suffix(profile: dict) -> str:
+    if profile.get("provider") != "ollama_native":
+        return "nothink"
+    if profile.get("structured_output", False):
+        return "native_schema"
+    if profile.get("think") is False:
+        return "native_nothink_plain"
+    return "native_plain"
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
@@ -65,7 +75,8 @@ def main() -> None:
         profile = profiles[model_key]
         model = profile["model"]
         max_tokens = int(profile["max_tokens"])
-        name = f"{model_key}_gate_{args.stage}_nothink"
+        mode_suffix = profile_mode_suffix(profile)
+        name = f"{model_key}_gate_{args.stage}_{mode_suffix}"
         command = [
             sys.executable,
             "-u",
