@@ -60,3 +60,9 @@ models:
     base_url_env: LOCAL_BASE_URL
     timeout_seconds: 180
     allow_missing_key: true
+  ollama:
+    provider: openai_compatible
+    api_key_env: OLLAMA_API_KEY
+    base_url_env: OLLAMA_BASE_URL
+    timeout_seconds: 600
+    temperature: 0
