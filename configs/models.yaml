@@ -83,19 +83,20 @@ models:
     parameter_count: 7B
     notes: Local DeepSeek LLM 7B Chat via Ollama, non-reasoning.
     runtime: ollama
-  deepseek_v2_16b_ollama:
-    provider: openai_compatible
-    base_url: http://127.0.0.1:11434/v1
-    model: deepseek-v2:16b
+  deepseek_r1_8b_ollama:
+    provider: ollama_native
+    base_url: http://127.0.0.1:11434
+    model: deepseek-r1:8b
     temperature: 0.0
-    max_tokens: 256
-    timeout_seconds: 300
+    max_tokens: 2048
+    timeout_seconds: 900
     retries: 1
     allow_missing_key: true
-    size_label: local_16b_moe
-    parameter_count: 16B
-    notes: DeepSeek-V2 16B Lite Chat via Ollama, non-R1 model.
     runtime: ollama
+    think: false
+    structured_output: false
+    size_label: local_8b
+    parameter_count: 8B
   glm4_9b_ollama:
     provider: openai_compatible
     base_url: http://127.0.0.1:11434/v1

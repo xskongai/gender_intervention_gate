@@ -11,7 +11,7 @@ import yaml
 
 LOCAL_MODELS = {
     "qwen": "qwen3_5_9b_ollama",
-    "deepseek": "deepseek_v2_16b_ollama",
+    "deepseek": "deepseek_r1_8b_ollama",
     "glm": "glm4_9b_ollama",
     "gemma": "gemma2_9b_ollama",
     "llama": "llama3_1_8b_ollama",
