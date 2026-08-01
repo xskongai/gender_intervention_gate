@@ -135,10 +135,27 @@ def main() -> None:
             pool.submit(build_rewriter_prediction, item, rewriter): item.id
             for item in items
         }
+        # for completed, future in enumerate(as_completed(futures), start=1):
+        #     predictions.append(future.result().to_dict())
+        #     if completed % 10 == 0 or completed == len(items):
+        #         print(f"Completed {completed}/{len(items)}")
         for completed, future in enumerate(as_completed(futures), start=1):
-            predictions.append(future.result().to_dict())
-            if completed % 10 == 0 or completed == len(items):
-                print(f"Completed {completed}/{len(items)}")
+            prediction = future.result().to_dict()
+            predictions.append(prediction)
+
+            status = "FAILED" if prediction["error"] else (
+                "CHANGED" if prediction["changed"] else "UNCHANGED"
+            )
+            latency = prediction["latency_ms"] / 1000
+
+            print(
+                f"[{completed:4d}/{len(items)}] "
+                f"{prediction['id']:<12} "
+                f"{status:<9} "
+                f"{latency:7.2f}s  "
+                f"{prediction['final_output']}",
+                flush=True,
+            )
 
     order = {item.id: index for index, item in enumerate(items)}
     predictions.sort(key=lambda p: order[p["id"]])

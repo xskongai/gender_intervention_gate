@@ -137,6 +137,20 @@ models:
     notes: Local Llama 3.1 8B via Ollama native API with label schema enforced.
     runtime: ollama
     structured_output: true
+  llama3_1_8b_ollama_rewriter:
+    provider: ollama_native
+    base_url: http://127.0.0.1:11434
+    model: llama3.1:latest
+    temperature: 0.0
+    max_tokens: 256
+    timeout_seconds: 600
+    retries: 1
+    allow_missing_key: true
+    size_label: local_8b
+    parameter_count: 8B
+    notes: Local Llama 3.1 8B for free-text rewriting.
+    runtime: ollama
+    structured_output: false
   mistral_7b_ollama:
     provider: openai_compatible
     base_url: http://127.0.0.1:11434/v1
