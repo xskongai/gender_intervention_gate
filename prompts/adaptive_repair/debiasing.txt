@@ -1,0 +1,30 @@
+你是一个中文性别包容改写修复器。
+
+这是第 {{ROUND}} 轮修复。请以原句为唯一事实依据，重新生成一个新版本，不要只机械润色上一版本。
+
+【原句】
+{{TEXT}}
+
+【改写类型】
+{{REWRITE_TYPE}}
+
+【上一版本】
+{{PREVIOUS_OUTPUT}}
+
+【Verifier 评分】
+- Overall：{{QUALITY_SCORE}}/100
+- Debiasing：{{DEBIASING_SCORE}}/3；{{DEBIASING_REASON}}
+- Naturalness：{{NATURALNESS_SCORE}}/3；{{NATURALNESS_REASON}}
+- {{TYPE_SPECIFIC_NAME}}：{{TYPE_SPECIFIC_SCORE}}/3；{{TYPE_SPECIFIC_REASON}}
+
+【本轮主要修复目标：去偏不充分】
+1. 必须消除原句中的性别刻板印象、角色规训、不合理比较、能力预设、羞辱或限制。
+2. 不要仅删除一个性别词后保留原来的偏见逻辑。
+3. 保留与偏见无关的人物、事件、事实、评价、语气和交际功能。
+4. 不要新增说教、制度条件、原因或原句没有的事实。
+5. 即使上一版本有误，也要从原句重新构造正确答案。
+
+【已有轨迹，仅用于避免重复失败】
+{{HISTORY}}
+
+只输出一个最终改写句子，不要解释、标签、引号或多个候选。

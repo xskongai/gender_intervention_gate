@@ -36,7 +36,7 @@ def test_qwen_uses_openai_compat_and_disables_thinking() -> None:
     assert qwen["extra_body"] == {"reasoning_effort": "none"}
 
 
-def test_deepseek_uses_native_think_false() -> None:
+def test_deepseek_uses_native_plain_with_large_budget() -> None:
     models = yaml.safe_load(
         (ROOT / "configs/models.yaml").read_text(encoding="utf-8")
     )["models"]
@@ -45,7 +45,7 @@ def test_deepseek_uses_native_think_false() -> None:
     assert profile["base_url"] == "http://127.0.0.1:11434"
     assert profile["think"] is False
     assert profile["structured_output"] is False
-    assert profile["max_tokens"] == 256
+    assert profile["max_tokens"] == 2048
 
 
 def test_llama_uses_native_structured_output() -> None:

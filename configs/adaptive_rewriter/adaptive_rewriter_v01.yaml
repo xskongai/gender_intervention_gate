@@ -1,0 +1,40 @@
+name: adaptive_verify_repair_v01
+models_config: configs/models.yaml
+split: data/splits/group_aware_v2.3/dev_pilot_positive_33.jsonl
+type_map: data/review/rewrite_type_map_dev219.csv
+concurrency: 1
+
+rewriter:
+  model_key: qwen3_5_9b_ollama
+  initial_prompt: prompts/rewriter_v02_semantic_preserving.txt
+  temperature: 0
+  max_output_tokens: 256
+  max_tokens_field: max_tokens
+  retries: 1
+  cache_db: .cache/llm_cache.sqlite
+
+verifier:
+  model_key: openai_judge
+  prompt: prompts/rewrite_judge_v04_balanced.txt
+  temperature: 0
+  max_output_tokens: 512
+  max_tokens_field: max_tokens
+  retries: 3
+  cache_db: .cache/llm_cache.sqlite
+
+adaptive:
+  threshold: 80
+  max_rounds: 3
+  # Threshold 80 already enforces a strong weighted score. These minima remain
+  # configurable for later hard-constraint ablations.
+  hard_min_scores:
+    debiasing: 1
+    naturalness: 1
+    type_specific: 1
+
+repair_prompts:
+  debiasing: prompts/adaptive_repair/debiasing.txt
+  fidelity: prompts/adaptive_repair/fidelity.txt
+  relevance: prompts/adaptive_repair/relevance.txt
+  naturalness: prompts/adaptive_repair/naturalness.txt
+  generic: prompts/adaptive_repair/generic.txt

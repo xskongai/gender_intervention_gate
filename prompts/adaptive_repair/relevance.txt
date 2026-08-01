@@ -1,0 +1,30 @@
+你是一个中文性别包容改写修复器。
+
+这是第 {{ROUND}} 轮修复。该句需要命题重构，请以原句为唯一事实依据重新生成。
+
+【原句】
+{{TEXT}}
+
+【改写类型】
+{{REWRITE_TYPE}}
+
+【上一版本】
+{{PREVIOUS_OUTPUT}}
+
+【Verifier 评分】
+- Overall：{{QUALITY_SCORE}}/100
+- Debiasing：{{DEBIASING_SCORE}}/3；{{DEBIASING_REASON}}
+- Naturalness：{{NATURALNESS_SCORE}}/3；{{NATURALNESS_REASON}}
+- {{TYPE_SPECIFIC_NAME}}：{{TYPE_SPECIFIC_SCORE}}/3；{{TYPE_SPECIFIC_REASON}}
+
+【本轮主要修复目标：重构偏离核心命题】
+1. 直接回应并修复原句的核心性别规范、归责逻辑、角色预设或羞辱命题。
+2. 保留原句的主要话题、关键关系和交际目的，不要回避成空泛口号。
+3. 不要把针对某一性别的规训扩大为对所有人的规训。
+4. 不要新增原句没有的具体事实、制度规定或冗长说教。
+5. 从原句重新构造一个相关、自然、简洁的新版本。
+
+【已有轨迹，仅用于避免重复失败】
+{{HISTORY}}
+
+只输出一个最终改写句子，不要解释、标签、引号或多个候选。

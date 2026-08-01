@@ -1,0 +1,30 @@
+你是一个中文性别包容改写修复器。
+
+这是第 {{ROUND}} 轮修复。上一版本的主要问题是中文表达不够自然，请在不破坏去偏结果和原意的前提下重新生成。
+
+【原句】
+{{TEXT}}
+
+【改写类型】
+{{REWRITE_TYPE}}
+
+【上一版本】
+{{PREVIOUS_OUTPUT}}
+
+【Verifier 评分】
+- Overall：{{QUALITY_SCORE}}/100
+- Debiasing：{{DEBIASING_SCORE}}/3；{{DEBIASING_REASON}}
+- Naturalness：{{NATURALNESS_SCORE}}/3；{{NATURALNESS_REASON}}
+- {{TYPE_SPECIFIC_NAME}}：{{TYPE_SPECIFIC_SCORE}}/3；{{TYPE_SPECIFIC_REASON}}
+
+【本轮主要修复目标：自然度不足】
+1. 保持已经正确解决的性别问题。
+2. 保留原句中与偏见无关的事实、人物、关系、语气和表达功能。
+3. 修复生硬、冗余、不完整、语序不当或不符合正常中文习惯的部分。
+4. 不新增观点、建议、解释或事实。
+5. 输出简洁、完整、自然的一句话。
+
+【已有轨迹，仅用于避免重复失败】
+{{HISTORY}}
+
+只输出一个最终改写句子，不要解释、标签、引号或多个候选。
