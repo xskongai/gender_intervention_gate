@@ -1,6 +1,7 @@
 README.md
 pyproject.toml
 src/gender_gate/__init__.py
+src/gender_gate/adaptive_rewriter.py
 src/gender_gate/cache.py
 src/gender_gate/classifier.py
 src/gender_gate/cleaning.py
@@ -25,6 +26,7 @@ src/gender_intervention_gate.egg-info/SOURCES.txt
 src/gender_intervention_gate.egg-info/dependency_links.txt
 src/gender_intervention_gate.egg-info/requires.txt
 src/gender_intervention_gate.egg-info/top_level.txt
+tests/test_adaptive_rewriter.py
 tests/test_apply_rewrite_type_map.py
 tests/test_cleaning.py
 tests/test_compare_rewrite_runs.py

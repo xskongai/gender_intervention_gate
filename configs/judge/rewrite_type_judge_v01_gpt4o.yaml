@@ -1,0 +1,10 @@
+name: rewrite_type_judge_v01
+model_key: openai_judge
+models_config: configs/models.yaml
+prompt: prompts/rewrite_type_judge_v01.txt
+temperature: 0
+max_output_tokens: 128
+max_tokens_field: max_tokens
+concurrency: 5
+retries: 3
+cache_db: .cache/llm_cache.sqlite

@@ -1,0 +1,40 @@
+判断下面句子的改写类型。
+
+LOCAL_REPAIR：
+去掉性别偏见后，原句中仍有一个本来就明确存在、可以直接保留的核心命题。
+
+PROPOSITION_RECONSTRUCTION：
+性别偏见本身构成了主要命题、关系或规则，去偏后必须重新建立主要命题。
+
+注意：
+可保留的核心命题必须是原句本来已经表达的内容，不能通过扩大主体范围、改变关系、规则或立场来人为构造。
+
+示例：
+
+原句：他出轨了，毕竟是男人。
+核心命题：他出轨了。
+类型：LOCAL_REPAIR
+
+原句：她比男人还能干。
+核心命题：她很能干。
+类型：LOCAL_REPAIR
+
+原句：男人都不能哭。
+核心命题：NONE
+类型：PROPOSITION_RECONSTRUCTION
+
+原句：趣味项目按男队女队分组，各队人数不限。
+核心命题：NONE
+类型：PROPOSITION_RECONSTRUCTION
+
+现在判断：
+
+ID：{{ID}}
+原句：{{TEXT}}
+
+只输出合法 JSON：
+
+{
+  "core_proposition": "可直接保留的核心命题；如果没有则写 NONE",
+  "rewrite_type": "LOCAL_REPAIR 或 PROPOSITION_RECONSTRUCTION"
+}
