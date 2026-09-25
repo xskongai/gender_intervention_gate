@@ -1,223 +1,123 @@
-# Gender Intervention Gate v2.3
+# PAIFAR
 
-A focused binary-classification project for Chinese gender-inclusive rewriting:
+**PAIFAR** (Protection-Aware Intervention and Feedback-Guided Adaptive Rewriting) is a framework for measuring and mitigating **overcorrection in Chinese gender-inclusive generation**.
 
-> Distinguish text that contains sufficient internal evidence for gender-inclusive intervention (`POSITIVE`) from text whose gender information must be preserved (`NEGATIVE`).
+This repository contains the main PAIFAR implementation, including the **Protection-Aware Intervention Gate** and the **Feedback-Guided Adaptive Rewriter**.
 
-The acceptance target is:
+**Main repository:** `gender_intervention_gate`  
+**Companion evaluation repository:** [`over_correction_eval`](https://github.com/xskongai/over_correction_eval)
 
-```text
-Positive Recall >= 0.90
-Negative Recall >= 0.90
-```
+## Overview
 
-## Dataset v2.3
+PAIFAR separates **whether to intervene** from **how to rewrite**.
 
-Only finalized main-set rows are included:
-
-- Positive: 871
-- Negative: 717
-- Total: 1,588
-
-The model input is always `text`. IDs, labels, categories, source, template groups, difficulty, and reference rewrites are evaluation metadata and must never be inserted into the prompt.
-
-Canonical files:
+<p align="center">
+  <img src="docs/figures/paifar_framework.png"
+       alt="PAIFAR Framework"
+       width="100%">
+</p>
 
 ```text
-data/raw/source_workbooks/positive_v2.3_main_only_clean.xlsx
-data/raw/source_workbooks/negative_v2.3_main_only_clean.xlsx
-data/raw/positive_main.csv
-data/raw/negative_main.csv
-data/processed/main.jsonl
+Input
+  │
+  ▼
+Intervention Gate
+  │
+  ├── KEEP ──────► Original Text
+  │
+  └── REWRITE
+          │
+          ▼
+Adaptive Rewriter
+          │
+          ▼
+Verifier → Feedback → Refinement
+          │
+          ▼
+      Final Output
 ```
 
-## Leakage-controlled split
+> **Decide whether intervention is necessary before deciding how to rewrite.**
 
-The recommended split is:
+## Benchmark
+
+**1,588 instances**
+
+| Category | Count |
+|---|---:|
+| Golden-Positive | 871 |
+| Golden-Negative | 717 |
+| **Total** | **1,588** |
+
+- **Golden-Positive:** intervention required.
+- **Golden-Negative:** existing gender information should be preserved.
+
+Across **11 language models**, zero-shot conditional rewriting produced an average **Overcorrection Rate of 65.28%** on the Golden-Negative set.
+
+## Repository Structure
 
 ```text
-data/splits/group_aware_v2.3/
+gender_intervention_gate/
+├── configs/          # Experiment configurations
+├── data/             # Dataset and splits
+├── docs/             # Documentation and figures
+├── paper_results/    # Paper results
+├── prompts/          # Prompts
+├── runs/             # Experiment outputs
+├── scripts/          # Experiment scripts
+├── src/              # Main implementation
+├── tests/             # Tests
+├── .env.example
+├── pyproject.toml
+└── README.md
 ```
 
-- exemplar pool: 80
-- dev: 400
-- fixed pilot: 60 (subset of dev)
-- frozen test: 1,108
-
-The 414 template-derived Positive samples belong to 34 template groups. A template group is kept entirely within exemplar, dev, or test, preventing near-identical template variants from leaking across splits.
-
-For comparison only, the project also contains a row-level stratified split:
-
-```text
-data/splits/iid_v2.3/
-```
-
-Do not use IID results as the primary paper result because template leakage can inflate performance.
-
-## Setup
+## Installation
 
 ```bash
+git clone https://github.com/xskongai/gender_intervention_gate.git
 cd gender_intervention_gate
+
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
-cp .env.example .env
 ```
 
-Add the required API keys and model names to `.env` and `configs/models.yaml`.
+Create `.env` from `.env.example` and configure the required model/API credentials.
 
-## Validate the updated dataset
+## Running
+
+Experiment configurations are in `configs/` and scripts are in `scripts/`.
+
+```bash
+python scripts/run_experiment.py \
+  --config configs/experiments/<experiment>.yaml
+```
+
+Run tests:
 
 ```bash
 pytest
-python scripts/validate_data.py --positive 871 --negative 717
 ```
 
-To reconstruct the unified JSONL from the two CSV files:
+## Evaluation
 
-```bash
-python scripts/prepare_data.py
+PAIFAR supports evaluation of:
+
+- **Intervention Gate**
+- **Adaptive Rewriter**
+- **End-to-end PAIFAR**
+- **Overcorrection**
+
+For systematic overcorrection evaluation and comparative experiments, see [`over_correction_eval`](https://github.com/xskongai/over_correction_eval).
+
+## Citation
+
+```bibtex
+@inproceedings{kong2026paifar,
+  title     = {PAIFAR: Measuring and Mitigating Overcorrection in Chinese Gender-Inclusive Generation},
+  author    = {Kong, Xiaoshuang and others},
+  booktitle = {Proceedings of SPELLL 2026},
+  year      = {2026}
+}
 ```
-
-To reconstruct both split variants:
-
-```bash
-python scripts/make_splits.py \
-  --mode group-aware \
-  --output-dir data/splits/group_aware_v2.3
-
-python scripts/make_splits.py \
-  --mode iid \
-  --output-dir data/splits/iid_v2.3
-```
-
-## Run experiments
-
-Pilot 60:
-
-```bash
-python scripts/run_experiment.py \
-  --config configs/experiments/baseline_zero_shot.yaml
-```
-
-Boundary prompt:
-
-```bash
-python scripts/run_experiment.py \
-  --config configs/experiments/boundary_zero_shot.yaml
-```
-
-Contrastive few-shot:
-
-```bash
-python scripts/run_experiment.py \
-  --config configs/experiments/contrastive_fewshot.yaml
-```
-
-Full dev:
-
-```bash
-python scripts/run_experiment.py \
-  --config configs/experiments/contrastive_fewshot.yaml \
-  --split data/splits/group_aware_v2.3/dev.jsonl \
-  --name contrastive_dev_v23
-```
-
-The test split should remain frozen until prompt, examples, model selection, and thresholds are finalized.
-
-
-## Optional Rule-first front route
-
-The frozen contrastive LLM Gate can now be preceded by a conservative
-deterministic route. See [`UPDATE_RULE_FIRST_GATE.md`](UPDATE_RULE_FIRST_GATE.md).
-
-```bash
-# Original LLM-only Gate
-python scripts/run_experiment.py \
-  --config configs/experiments/contrastive_fewshot.yaml
-
-# Rule-first + the same frozen LLM Gate
-python scripts/run_experiment.py \
-  --config configs/experiments/contrastive_fewshot_rule_first.yaml
-```
-
-The same config can be overridden with `--rule-first` or `--no-rule-first`.
-Unmatched items always fall back to the unchanged frozen LLM Gate.
-
-## Outputs
-
-Each experiment writes a reproducible run directory containing the copied config and prompt, predictions, metrics, error slices, and SHA-256 hashes of the dataset and split.
-
-## End-to-end rewrite comparison
-
-Use the same rewrite model, prompt, split, temperature, and token settings for both systems. The only difference is whether the frozen Gate is applied before rewriting.
-
-### 1. Direct Rewrite
-
-```bash
-python scripts/run_rewrite_experiment.py \
-  --config configs/rewrite/rewrite_gpt4o.yaml \
-  --mode direct \
-  --split data/splits/group_aware_v2.3/dev_pilot_60.jsonl \
-  --name direct_rewrite_pilot_v23
-```
-
-### 2. Gate + Rewrite
-
-Pass the completed Gate run directory whose `predictions.jsonl` covers the same split:
-
-```bash
-python scripts/run_rewrite_experiment.py \
-  --config configs/rewrite/rewrite_gpt4o.yaml \
-  --mode gated \
-  --gate-run runs/<GATE_RUN_DIRECTORY> \
-  --split data/splits/group_aware_v2.3/dev_pilot_60.jsonl \
-  --name gated_rewrite_pilot_v23
-```
-
-For the full development set, replace the split with:
-
-```text
-data/splits/group_aware_v2.3/dev.jsonl
-```
-
-Each rewrite run produces:
-
-- `predictions.jsonl` and `predictions.csv`
-- `metrics.json` and `summary.md`
-- `positive_failures.csv`
-- `negative_over_edits.csv`
-- `semantic_review_queue.csv`
-- `errors.csv`
-- `manifest.json`
-
-The automatic endpoint metrics are change-based:
-
-- **Negative preservation**: proportion of Negative inputs returned unchanged.
-- **Over-edit rate**: proportion of Negative inputs changed.
-- **Positive intervention rate**: proportion of Positive inputs changed.
-- **Under-edit rate**: proportion of Positive inputs left unchanged.
-
-A changed Positive is not automatically a successful rewrite. Review `semantic_review_queue.csv` and score bias removal and semantic preservation separately before reporting final rewrite quality.
-
-### 3. Compare two runs
-
-```bash
-python scripts/compare_rewrite_runs.py \
-  runs/<DIRECT_RUN_DIRECTORY> \
-  runs/<GATED_RUN_DIRECTORY> \
-  --output runs/rewrite_comparison.md
-```
-
-### Offline plumbing smoke test
-
-`--mock-oracle` is provided only to verify the pipeline without API calls. Its metrics must never be reported as experimental results.
-
-
-## Independent Rewriter v02
-
-The Gate and Rewriter are evaluated as separate modules. For the POSITIVE-only Rewriter workflow, see [`REWRITER_EXPERIMENT.md`](REWRITER_EXPERIMENT.md). The independent runner is `scripts/run_rewriter_experiment.py`; it does not accept or read Gate predictions.
-
-## Second-layer rewrite quality Judge
-
-See [`SECOND_LAYER_LLM_JUDGE.md`](SECOND_LAYER_LLM_JUDGE.md) for the independent 1–3 LLM scoring pipeline. The Judge returns raw scores only; percentage normalization and weighted aggregation are computed by Python.
